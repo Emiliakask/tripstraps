@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="et" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trips-Traps-Trull</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --color-bg: #101216;
+    --color-surface: #1b1e25;
+    --color-border: #343b47;
+    --color-text: #f1f3f7;
+    --color-text-muted: #a6adbb;
+    --color-x: #87ddce;
+    --color-x-soft: #1a302f;
+    --color-o: #edbd8b;
+    --color-o-soft: #32291f;
+    --color-hover: #262d37;
+    --color-win-bg: #35803a;
+    --color-win-bg-dark: #245c28;
+    --radius-md: 20px;
+    --radius-lg: 24px;
+    --transition-ui: 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    font-family: 'Sora', 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .game {
+    width: 100%;
+    max-width: 440px;
+    text-align: center;
+  }
+  [hidden] { display: none !important; }
+  .room-bar {
+    margin-top: 20px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: var(--color-surface);
+    text-align: left;
+  }
+  .room-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .room-code { font-size: 1.125rem; letter-spacing: 0.16em; font-weight: 700; user-select: all; }
+  .room-meta, .room-hint { color: var(--color-text-muted); font-size: 0.75rem; }
+  .room-hint { margin-top: 8px; }
+  .copy-code { min-height: 44px; padding: 8px 12px; border: 1px solid var(--color-border); background: var(--color-bg); border-radius: 10px; color: var(--color-text); cursor: pointer; font: inherit; font-size: 0.875rem; }
+  .copy-code:hover { border-color: var(--color-x); }
+  .online-note { margin-top: 16px; font-size: 0.75rem; color: var(--color-text-muted); line-height: 1.6; }
+  .join-form { margin-top: 20px; text-align: left; }
+  .join-form label { display: block; font-size: 0.875rem; margin-bottom: 8px; }
+  .join-form input {
+    width: 100%; min-height: 48px; padding: 12px;
+    background: var(--color-bg); color: var(--color-text);
+    border: 1px solid var(--color-border); border-radius: 12px;
+    font: inherit; font-size: 16px; text-transform: uppercase; letter-spacing: 0.14em;
+  }
+  .lobby-error { margin-top: 12px; font-size: 0.875rem; color: #ffb4b4; }
+  .network-message { margin-top: 12px; font-size: 0.75rem; color: var(--color-text-muted); }
+  button:disabled { cursor: default; }
+  .mode-btn:disabled, .restart:disabled { opacity: 0.5; transform: none; }
+  .mode-btn.primary { background: var(--color-x); border-color: var(--color-x); color: var(--color-bg); }
+  .mode-btn.primary:hover:not(:disabled) { background: #a1e6da; }
+  input:focus-visible, .copy-code:focus-visible { outline: 2px solid var(--color-x); outline-offset: 3px; }
+  .online-divider { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-border); color: var(--color-text-muted); font-size: 0.75rem; }
+  .overlay { overflow-y: auto; }
+
+  .game h1 {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    line-height: 1.15;
+  }
+
+  .game h1 .dash { color: var(--color-text-muted); font-weight: 400; }
+
+  .subtitle {
+    margin-top: 4px;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 24px 0 20px;
+    padding: 10px 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    box-shadow: none;
+    min-height: 44px;
+  }
+
+  .status .mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 1rem;
+  }
+  .status .mark.x { color: var(--color-bg); background: var(--color-x); }
+  .status .mark.o { color: var(--color-bg); background: var(--color-o); }
+
+  .status.finished {
+    background: var(--color-x-soft);
+    border-color: var(--color-x);
+    color: var(--color-text);
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .cell {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: clamp(2.4rem, 12vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1;
+    color: var(--color-text);
+    cursor: pointer;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+    transition:
+      transform var(--transition-ui),
+      background var(--transition-ui),
+      border-color var(--transition-ui),
+      box-shadow var(--transition-ui),
+      color var(--transition-ui),
+      opacity var(--transition-ui);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .cell:hover:not(:disabled) {
+      transform: translateY(-4px);
+      background: var(--color-hover);
+      border-color: var(--color-x);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26);
+    }
+  }
+
+  .cell:active:not(:disabled) {
+    transform: translateY(0) scale(0.97);
+  }
+
+  .cell:disabled { cursor: default; }
+
+  .cell:focus-visible {
+    outline: 2px solid var(--color-x);
+    outline-offset: 3px;
+  }
+
+  .cell.x { color: var(--color-x); background: var(--color-x-soft); }
+  .cell.o { color: var(--color-o); background: var(--color-o-soft); }
+
+  .cell .piece {
+    display: inline-block;
+    animation: pop 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes pop {
+    from { transform: scale(0.4); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .board.locked .cell:not(.x):not(.o) {
+    opacity: 0.55;
+  }
+
+  .cell.win {
+    background: var(--color-win-bg);
+    border-color: var(--color-win-bg-dark);
+    color: #fdfcf9;
+    box-shadow: 0 0 0 1px var(--color-win-bg-dark) inset;
+  }
+
+  @keyframes win-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px var(--color-win-bg-dark) inset; }
+    50% { box-shadow: 0 0 0 5px var(--color-win-bg-dark) inset; }
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+
+  .restart {
+    padding: 12px 32px;
+    background: var(--color-text);
+    color: var(--color-bg);
+    border: none;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform var(--transition-ui), background var(--transition-ui);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .restart:hover { background: var(--color-x); transform: translateY(-1px); }
+  .restart:focus-visible {
+    outline: 2px solid var(--color-x);
+    outline-offset: 3px;
+  }
+
+  .change-mode {
+    padding: 12px 20px;
+    background: transparent;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform var(--transition-ui), color var(--transition-ui), border-color var(--transition-ui);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .change-mode:hover {
+    color: var(--color-text);
+    border-color: var(--color-text-muted);
+    transform: translateY(-1px);
+  }
+
+  .change-mode:focus-visible {
+    outline: 2px solid var(--color-x);
+    outline-offset: 3px;
+  }
+
+  .score {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-top: 20px;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    flex-wrap: wrap;
+  }
+
+  .score b {
+    display: block;
+    font-size: 1.375rem;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+  .score .s-x b { color: var(--color-x); }
+  .score .s-o b { color: var(--color-o); }
+
+  @media (max-width: 420px) {
+    .online-game .room-bar { margin-top: 12px; padding: 8px 12px; }
+    .online-game .room-hint { line-height: 1.4; }
+    .online-game .status { margin: 12px 0; padding: 8px 16px; font-size: 1rem; }
+    .online-game .board { width: min(100%, 37svh); margin-inline: auto; gap: 10px; }
+    .online-game .controls { margin-top: 16px; gap: 8px; }
+    .online-game .score { margin-top: 12px; }
+    .score {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+    .score b { font-size: 1.125rem; }
+  }
+
+  /* Mode selection overlay */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(6, 8, 12, 0.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .overlay.hidden { display: none; }
+
+  .mode-panel {
+    width: 100%;
+    max-width: 340px;
+    padding: 32px;
+    text-align: center;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    animation: panel-in 260ms cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+
+  @keyframes panel-in {
+    from { transform: scale(0.9) translateY(10px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  .mode-panel h2 {
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+
+  .mode-panel .hint {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-bottom: 20px;
+  }
+
+  .mode-btn {
+    display: block;
+    width: 100%;
+    padding: 14px 20px;
+    margin-top: 10px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    cursor: pointer;
+    transition:
+      transform var(--transition-ui),
+      background var(--transition-ui),
+      border-color var(--transition-ui),
+      box-shadow var(--transition-ui);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mode-btn:hover {
+    transform: translateY(-2px);
+    background: var(--color-hover);
+    border-color: var(--color-x);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.24);
+  }
+
+  .mode-btn:focus-visible {
+    outline: 2px solid var(--color-x);
+    outline-offset: 3px;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.01ms !important; }
+    .cell .piece { animation: none; }
+    .cell.win { animation: none; }
+    .mode-panel { animation: none; }
+    .cell:hover, .restart:hover, .mode-btn:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<main class="game">
+  <h1>Trips<span class="dash">-</span>Traps<span class="dash">-</span>Trull</h1>
+  <p class="subtitle" id="subtitle">Kaks mängijat, üks seade — X ja O vaheldumisi</p>
+
+  <section class="room-bar" id="roomBar" aria-label="Mängutoa andmed" hidden>
+    <div class="room-top">
+      <div>
+        <p class="room-meta" id="roomIdentity">Mängutuba</p>
+        <p class="room-code" id="roomCode"></p>
+      </div>
+      <button class="copy-code" id="copyCode" type="button">Kopeeri kood</button>
+    </div>
+    <p class="room-hint" id="roomHint">Ava sama mäng teises telefonis ja sisesta see kood.</p>
+  </section>
+  <p class="status" id="status" aria-live="polite"></p>
+
+  <div class="board" id="board" role="grid" aria-label="Mängulaud"></div>
+
+  <div class="controls">
+    <button class="restart" id="restart" type="button">Uus mäng</button>
+    <button class="change-mode" id="changeMode" type="button">Muuda režiimi</button>
+  </div>
+
+  <div class="score" aria-label="Punktiseis">
+    <span class="s-x"><span id="labelX">Mängija X võidud:</span> <b id="scoreX">0</b></span>
+    <span class="s-o"><span id="labelO">Mängija O võidud:</span> <b id="scoreO">0</b></span>
+    <span class="s-d">Viigid: <b id="scoreD">0</b></span>
+  </div>
+  <p class="network-message" id="networkMessage" aria-live="polite" hidden></p>
+</main>
+
+<div class="overlay" id="modeOverlay">
+  <div class="mode-panel" role="dialog" aria-modal="true" aria-labelledby="modeTitle">
+    <h2 id="modeTitle">Vali režiim</h2>
+    <div id="modeChoices">
+      <p class="hint">Üks laud. Üks seade või kaks telefoni.</p>
+      <button class="mode-btn primary" id="modeOnline" type="button">Mängi kahe telefoniga</button>
+      <p class="online-divider">Samal seadmel</p>
+      <button class="mode-btn" id="modePvp" type="button">Kaks mängijat</button>
+      <button class="mode-btn" id="modeCpu" type="button">Mängi arvuti vastu</button>
+    </div>
+    <div id="onlineLobby" hidden>
+      <p class="hint">Loo tuba või liitu sõbra toakoodiga.</p>
+      <button class="mode-btn primary" id="createRoom" type="button">Loo mängutuba</button>
+      <form class="join-form" id="joinRoomForm">
+        <label for="joinCode">Sõbra toakood</label>
+        <input id="joinCode" name="code" maxlength="6" minlength="6" pattern="[A-Za-z2-9]{6}" placeholder="Nt ABC234" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+        <button class="mode-btn" id="joinRoom" type="submit">Liitu toaga</button>
+      </form>
+      <p class="lobby-error" id="lobbyError" role="alert" hidden></p>
+      <p class="online-note">Vaja on internetti, mitte sama Wi-Fit ega Bluetoothi. Hoia mänguaken avatuna: lehe uuesti laadimisel tuleb luua uus tuba. Tuba kehtib kuni 24 tundi.</p>
+      <button class="mode-btn" id="lobbyBack" type="button">Tagasi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var LINES = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+    [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+    [0, 4, 8], [2, 4, 6]             // diagonals
+  ];
+
+  var CPU_DELAY = 600; // ms
+
+  var boardEl = document.getElementById('board');
+  var statusEl = document.getElementById('status');
+  var subtitleEl = document.getElementById('subtitle');
+  var restartBtn = document.getElementById('restart');
+  var changeModeBtn = document.getElementById('changeMode');
+  var overlayEl = document.getElementById('modeOverlay');
+  var modePvpBtn = document.getElementById('modePvp');
+  var modeCpuBtn = document.getElementById('modeCpu');
+  var labelXEl = document.getElementById('labelX');
+  var labelOEl = document.getElementById('labelO');
+  var scoreXEl = document.getElementById('scoreX');
+  var scoreOEl = document.getElementById('scoreO');
+  var scoreDEl = document.getElementById('scoreD');
+
+  var cells = [];        // 9 button elements
+  var state;             // 'X' | 'O' | null per cell
+  var current;           // 'X' or 'O'
+  var gameOver;          // true once win or draw
+  var mode = null;       // 'pvp' | 'cpu' | null (before selection)
+  var gameId = 0;        // invalidates pending computer moves
+  var cpuTimer = null;
+
+  /* Shared rooms use server-authoritative state; tokens stay in this tab only. */
+  var net = null;
+  var netEpoch = 0;
+  var pollTimer = null;
+  var netBusy = false;
+  var netConnected = false;
+  var setupBusy = false;
+  var roomBarEl = document.getElementById('roomBar');
+  var networkMessageEl = document.getElementById('networkMessage');
+  var lobbyErrorEl = document.getElementById('lobbyError');
+  // The included Flask server serves this page and /api on the same origin.
+  // Opening the HTML directly still supports the two local game modes.
+  var API = /^https?:$/.test(location.protocol) ? location.origin : null;
+
+  async function apiRequest(path, body, token) {
+    if (!API) throw new Error('Veebimäng vajab serveriühendust. Ava mängu veebiversioon.');
+    var controller = new AbortController();
+    var timeout = setTimeout(function () { controller.abort(); }, 12000);
+    try {
+      var headers = {};
+      if (body !== undefined) headers['Content-Type'] = 'application/json';
+      if (token) headers.Authorization = 'Bearer ' + token;
+      var response = await fetch(API + path, {
+        method: body === undefined ? 'GET' : 'POST',
+        headers: headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: controller.signal,
+        credentials: 'same-origin',
+        cache: 'no-store'
+      });
+      var data;
+      try { data = await response.json(); }
+      catch (_) { throw new Error('Serveri vastust ei saanud lugeda. Proovi uuesti.'); }
+      if (!response.ok) {
+        var error = new Error(data.error || 'Ühendus ebaõnnestus. Proovi uuesti.');
+        error.status = response.status;
+        throw error;
+      }
+      return data;
+    } catch (error) {
+      if (error.name === 'AbortError' || error instanceof TypeError) {
+        throw new Error('Ühendust ei saadud. Kontrolli internetti ja proovi uuesti.');
+      }
+      throw error;
+    } finally { clearTimeout(timeout); }
+  }
+
+  function stopNetwork() {
+    netEpoch++;
+    if (pollTimer) clearTimeout(pollTimer);
+    pollTimer = null;
+    net = null;
+    netBusy = false;
+    netConnected = false;
+    roomBarEl.hidden = true;
+    document.querySelector('main').classList.remove('online-game');
+    networkMessageEl.hidden = true;
+    restartBtn.textContent = 'Uus mäng';
+    restartBtn.disabled = false;
+    changeModeBtn.textContent = 'Muuda režiimi';
+  }
+
+  function displayNetworkState(snapshot) {
+    if (!net || mode !== 'online') return;
+    if (net.snapshot && snapshot.version < net.snapshot.version) return;
+    net.snapshot = snapshot;
+    state = snapshot.board.slice();
+    current = snapshot.turn;
+    gameOver = snapshot.finished;
+    scores = snapshot.scores;
+    updateScores();
+    var waitingRestart = snapshot.restartVotes.length > 0;
+    var playable = netConnected && !netBusy && snapshot.joined && !snapshot.left &&
+      !snapshot.finished && !waitingRestart && snapshot.turn === net.you;
+    cells.forEach(function (cell, index) {
+      var value = snapshot.board[index];
+      // Preserve existing pieces so polling never restarts their animation.
+      if (cell.dataset.value !== (value || '')) {
+        cell.innerHTML = value ? '<span class="piece">' + value + '</span>' : '';
+        cell.dataset.value = value || '';
+      }
+      cell.classList.toggle('x', value === 'X');
+      cell.classList.toggle('o', value === 'O');
+      cell.classList.toggle('win', snapshot.winLine.indexOf(index) !== -1);
+      cell.disabled = !playable || value !== null;
+      cell.setAttribute('aria-label', 'Ruut ' + (index + 1) + ', ' + (value || 'tühi'));
+    });
+    boardEl.classList.toggle('locked', !playable);
+    document.getElementById('roomCode').textContent = net.code;
+    document.getElementById('roomIdentity').textContent = 'Sina: ' + net.you + ' · Voor ' + snapshot.round;
+    roomBarEl.hidden = false;
+    var hint;
+    var message;
+    if (snapshot.left) {
+      message = 'Vastasmängija lahkus toast';
+      hint = 'Mängutuba on suletud. Lahku toast ja loo uus mäng.';
+    } else if (!netConnected) {
+      message = 'Ühenduse taastamine…';
+      hint = 'Sinu käigud on ühenduse taastumiseni lukus.';
+    } else if (!snapshot.joined) {
+      message = 'Ootan teist mängijat…';
+      hint = 'Ütle sõbrale toakood. Tema valib „Liitu toaga”.';
+    } else if (waitingRestart) {
+      var ownVote = snapshot.restartVotes.indexOf(net.you) !== -1;
+      message = ownVote ? 'Ootan uue vooru kinnitust…' : 'Sõber soovib uut mängu';
+      hint = ownVote ? 'Uus voor algab siis, kui sõber nõustub.' : 'Vajuta „Kinnita uus mäng”, et alustada uut vooru.';
+    } else if (snapshot.finished) {
+      message = snapshot.winner ? (snapshot.winner === net.you ? 'Sina võitsid!' : 'Vastasmängija võitis!') : 'Viik! Keegi ei võitnud.';
+      hint = 'Uue vooru alustamiseks vajutage mõlemad „Uus mäng”.';
+    } else {
+      message = snapshot.turn === net.you ? 'Sinu käik (' + net.you + ')' : 'Vastasmängija käik (' + snapshot.turn + ')';
+      hint = snapshot.opponentOnline ? 'Mõlemad mängijad on ühendatud.' : 'Vastasmängija ühendus on pausil. Oota tema naasmist.';
+    }
+    document.getElementById('roomHint').textContent = hint;
+    renderStatus(message, snapshot.finished && !waitingRestart);
+    restartBtn.textContent = waitingRestart && snapshot.restartVotes.indexOf(net.you) === -1 ? 'Kinnita uus mäng' : 'Uus mäng';
+    restartBtn.disabled = !netConnected || netBusy || !snapshot.joined || !!snapshot.left || snapshot.restartVotes.indexOf(net.you) !== -1;
+    changeModeBtn.textContent = 'Lahku toast';
+  }
+
+  async function pollRoom(epoch) {
+    if (!net || epoch !== netEpoch || mode !== 'online') return;
+    try {
+      var data = await apiRequest('/api/rooms/' + net.code, undefined, net.token);
+      if (!net || epoch !== netEpoch) return;
+      netConnected = true;
+      networkMessageEl.hidden = true;
+      displayNetworkState(data.state);
+    } catch (error) {
+      if (!net || epoch !== netEpoch) return;
+      netConnected = false;
+      networkMessageEl.hidden = false;
+      networkMessageEl.textContent = error.message;
+      displayNetworkState(net.snapshot);
+      if ([403, 404, 410].indexOf(error.status) !== -1) return;
+    }
+    if (net && epoch === netEpoch && !net.snapshot.left) {
+      pollTimer = setTimeout(function () { pollRoom(epoch); }, netConnected ? 900 : 2500);
+    }
+  }
+
+  async function networkAction(action, index) {
+    if (!net || netBusy || !netConnected) return;
+    var epoch = netEpoch;
+    netBusy = true;
+    displayNetworkState(net.snapshot);
+    try {
+      var payload = { action: action, round: net.snapshot.round };
+      if (index !== undefined) payload.index = index;
+      var data = await apiRequest('/api/rooms/' + net.code, payload, net.token);
+      if (!net || epoch !== netEpoch) return;
+      netConnected = true;
+      networkMessageEl.hidden = true;
+      displayNetworkState(data.state);
+    } catch (error) {
+      if (!net || epoch !== netEpoch) return;
+      networkMessageEl.hidden = false;
+      networkMessageEl.textContent = error.message;
+    } finally {
+      if (net && epoch === netEpoch) {
+        netBusy = false;
+        displayNetworkState(net.snapshot);
+      }
+    }
+  }
+
+  function setSetupBusy(busy) {
+    setupBusy = busy;
+    ['createRoom', 'joinRoom', 'lobbyBack', 'joinCode'].forEach(function (id) {
+      document.getElementById(id).disabled = busy;
+    });
+    document.getElementById('createRoom').textContent = busy ? 'Ühendamine…' : 'Loo mängutuba';
+  }
+
+  async function enterRoom(code) {
+    if (setupBusy) return;
+    setSetupBusy(true);
+    lobbyErrorEl.hidden = true;
+    try {
+      var data = await apiRequest(code ? '/api/rooms/' + code + '/join' : '/api/rooms', {});
+      stopNetwork();
+      mode = 'online';
+      document.querySelector('main').classList.add('online-game');
+      reset();
+      net = { code: data.state.code, you: data.state.you, token: data.token, snapshot: null };
+      netConnected = true;
+      overlayEl.classList.add('hidden');
+      document.querySelector('main').inert = false;
+      subtitleEl.textContent = 'Kaks telefoni. Üks ühine mängulaud.';
+      labelXEl.textContent = 'Mängija X võidud:';
+      labelOEl.textContent = 'Mängija O võidud:';
+      displayNetworkState(data.state);
+      changeModeBtn.focus();
+      pollRoom(netEpoch);
+    } catch (error) {
+      lobbyErrorEl.hidden = false;
+      lobbyErrorEl.textContent = error.message;
+    } finally { setSetupBusy(false); }
+  }
+
+  function buildBoard() {
+    for (var i = 0; i < 9; i++) {
+      (function (index) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cell';
+        btn.setAttribute('role', 'gridcell');
+        btn.setAttribute('aria-label', 'Ruut ' + (index + 1) + ', tühi');
+        btn.addEventListener('click', function () { onCellClick(index); });
+        boardEl.appendChild(btn);
+        cells.push(btn);
+      })(i);
+    }
+  }
+
+  function reset() {
+    gameId++;
+    if (cpuTimer !== null) {
+      clearTimeout(cpuTimer);
+      cpuTimer = null;
+    }
+    state = [null, null, null, null, null, null, null, null, null];
+    current = 'X';
+    gameOver = false;
+    boardEl.classList.remove('locked');
+    cells.forEach(function (cell, i) {
+      cell.classList.remove('x', 'o', 'win');
+      cell.disabled = mode === null; // board stays locked until a mode is chosen
+      cell.innerHTML = '';
+      cell.dataset.value = '';
+      cell.setAttribute('aria-label', 'Ruut ' + (i + 1) + ', tühi');
+    });
+    renderStatus();
+  }
+
+  function onCellClick(index) {
+    if (mode === 'online') {
+      if (!net || netBusy || !netConnected || gameOver || state[index] !== null ||
+          !net.snapshot.joined || net.snapshot.left || net.snapshot.restartVotes.length ||
+          current !== net.you) return;
+      networkAction('move', index);
+      return;
+    }
+    if (gameOver || state[index] !== null) return; // ignore occupied / after end
+    if (mode === null) return;
+    if (mode === 'cpu' && current === 'O') return;  // computer's turn — no manual O
+    makeMove(index);
+    if (!gameOver && mode === 'cpu') scheduleCpuMove();
+  }
+
+  function makeMove(index) {
+    state[index] = current;
+    var cell = cells[index];
+    cell.innerHTML = '<span class="piece">' + current + '</span>';
+    cell.classList.add(current === 'X' ? 'x' : 'o');
+    cell.setAttribute('aria-label', 'Ruut ' + (index + 1) + ', ' + current);
+    cell.disabled = true;
+
+    var winLine = findWinningLine();
+    if (winLine) {
+      gameOver = true;
+      scores[current]++;
+      winLine.forEach(function (i) { cells[i].classList.add('win'); });
+      boardEl.classList.add('locked');
+      cells.forEach(function (c) { c.disabled = true; });
+      updateScores();
+      renderStatus(winMessage(), true);
+      return;
+    }
+
+    if (state.every(function (s) { return s !== null; })) {
+      gameOver = true;
+      scores.D++;
+      updateScores();
+      renderStatus('Viik! Keegi ei võitnud.', true);
+      return;
+    }
+
+    current = current === 'X' ? 'O' : 'X';
+    renderStatus();
+  }
+
+  function winMessage() {
+    if (mode === 'cpu') {
+      return current === 'X' ? 'Sina võitsid!' : 'Arvuti võitis!';
+    }
+    return 'Mängija ' + current + ' võitis!';
+  }
+
+  /* ---------- Computer opponent (plays O) ---------- */
+
+  function scheduleCpuMove() {
+    var id = gameId;
+    lockEmptyCells(true);
+    renderStatus('Arvuti mõtleb\u2026');
+    cpuTimer = setTimeout(function () {
+      cpuTimer = null;
+      if (id !== gameId || gameOver || mode !== 'cpu') return;
+      var move = chooseCpuMove();
+      lockEmptyCells(false);
+      makeMove(move);
+    }, CPU_DELAY);
+  }
+
+  function lockEmptyCells(lock) {
+    cells.forEach(function (c) {
+      if (!c.classList.contains('x') && !c.classList.contains('o')) {
+        c.disabled = lock;
+      }
+    });
+    boardEl.classList.toggle('locked', lock);
+  }
+
+  function chooseCpuMove() {
+    var free = [];
+    for (var i = 0; i < 9; i++) if (state[i] === null) free.push(i);
+
+    // First computer move: random free cell
+    var xCount = 0;
+    for (var j = 0; j < 9; j++) if (state[j] === 'X') xCount++;
+    if (xCount <= 1) {
+      return free[Math.floor(Math.random() * free.length)];
+    }
+
+    // 1) Win immediately if possible
+    var m = findLineMove('O');
+    if (m !== null) return m;
+    // 2) Block the player's winning line
+    m = findLineMove('X');
+    if (m !== null) return m;
+    // 3) Prefer the center
+    if (state[4] === null) return 4;
+    // 4) Prefer a corner
+    var corners = [0, 2, 6, 8].filter(function (i) { return state[i] === null; });
+    if (corners.length > 0) {
+      return corners[Math.floor(Math.random() * corners.length)];
+    }
+    // 5) Any free cell
+    return free[Math.floor(Math.random() * free.length)];
+  }
+
+  function findWinningLine() {
+    for (var i = 0; i < LINES.length; i++) {
+      var line = LINES[i];
+      if (state[line[0]] !== null &&
+          state[line[0]] === state[line[1]] &&
+          state[line[1]] === state[line[2]]) {
+        return line;
+      }
+    }
+    return null;
+  }
+
+  function findLineMove(player) {
+    for (var i = 0; i < LINES.length; i++) {
+      var line = LINES[i];
+      var own = 0, empty = -1;
+      for (var j = 0; j < 3; j++) {
+        if (state[line[j]] === player) own++;
+        else if (state[line[j]] === null) empty = line[j];
+      }
+      if (own === 2 && empty !== -1) return empty;
+    }
+    return null;
+  }
+
+  /* ---------- Mode selection ---------- */
+
+  function startGame(newMode) {
+    stopNetwork();
+    mode = newMode;
+    scores = { X: 0, O: 0, D: 0 };
+    overlayEl.classList.add('hidden');
+    document.querySelector('main').inert = false;
+    updateModeTexts();
+    reset();
+    cells[0].focus();
+  }
+
+  function showModeSelection() {
+    if (net) {
+      // Capture before clearing; an old response must never affect a new game.
+      apiRequest('/api/rooms/' + net.code, { action: 'leave' }, net.token).catch(function () {});
+    }
+    stopNetwork();
+    gameId++;
+    if (cpuTimer !== null) {
+      clearTimeout(cpuTimer);
+      cpuTimer = null;
+    }
+    mode = null;
+    overlayEl.classList.remove('hidden');
+    document.querySelector('main').inert = true;
+    document.getElementById('modeChoices').hidden = false;
+    document.getElementById('onlineLobby').hidden = true;
+    document.getElementById('modeTitle').textContent = 'Vali režiim';
+    modePvpBtn.focus();
+    updateModeTexts();
+    reset();
+  }
+
+  function updateModeTexts() {
+    if (mode === 'cpu') {
+      subtitleEl.textContent = 'Sina mängid X-iga, arvuti O-ga';
+      labelXEl.textContent = 'Sinu võidud (X):';
+      labelOEl.textContent = 'Arvuti võidud (O):';
+    } else {
+      subtitleEl.textContent = 'Kaks mängijat, üks seade — X ja O vaheldumisi';
+      labelXEl.textContent = 'Mängija X võidud:';
+      labelOEl.textContent = 'Mängija O võidud:';
+    }
+    updateScores();
+  }
+
+  /* ---------- Status & scores ---------- */
+
+  function renderStatus(message, finished) {
+    statusEl.classList.remove('finished');
+    if (message) {
+      statusEl.textContent = message;
+      if (finished) statusEl.classList.add('finished');
+      return;
+    }
+    if (mode === 'cpu') {
+      statusEl.innerHTML =
+        '<span class="mark x" aria-hidden="true">X</span>' +
+        'Sinu käik';
+      return;
+    }
+    statusEl.innerHTML =
+      '<span class="mark ' + current.toLowerCase() + '" aria-hidden="true">' + current + '</span>' +
+      'Mängija ' + current + ' käik';
+  }
+
+  function updateScores() {
+    scoreXEl.textContent = scores.X;
+    scoreOEl.textContent = scores.O;
+    scoreDEl.textContent = scores.D;
+  }
+
+  var scores = { X: 0, O: 0, D: 0 };
+
+  restartBtn.addEventListener('click', function () {
+    if (mode === null) return;
+    if (mode === 'online') { networkAction('restart'); return; }
+    reset();
+  });
+
+  changeModeBtn.addEventListener('click', showModeSelection);
+  modePvpBtn.addEventListener('click', function () { startGame('pvp'); });
+  modeCpuBtn.addEventListener('click', function () { startGame('cpu'); });
+  document.getElementById('modeOnline').addEventListener('click', function () {
+    document.getElementById('modeChoices').hidden = true;
+    document.getElementById('onlineLobby').hidden = false;
+    document.getElementById('modeTitle').textContent = 'Mängi kahe telefoniga';
+    lobbyErrorEl.hidden = true;
+    document.getElementById('createRoom').focus();
+  });
+  document.getElementById('lobbyBack').addEventListener('click', function () {
+    if (setupBusy) return;
+    document.getElementById('onlineLobby').hidden = true;
+    document.getElementById('modeChoices').hidden = false;
+    document.getElementById('modeTitle').textContent = 'Vali režiim';
+    document.getElementById('modeOnline').focus();
+  });
+  document.getElementById('createRoom').addEventListener('click', function () { enterRoom(); });
+  document.getElementById('joinRoomForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+    enterRoom(document.getElementById('joinCode').value.trim().toUpperCase());
+  });
+  document.getElementById('copyCode').addEventListener('click', async function () {
+    if (!net) return;
+    var button = this;
+    try {
+      await navigator.clipboard.writeText(net.code);
+      button.textContent = 'Kopeeritud';
+    } catch (_) {
+      var range = document.createRange();
+      range.selectNodeContents(document.getElementById('roomCode'));
+      var selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      button.textContent = 'Kood valitud';
+    }
+    setTimeout(function () { button.textContent = 'Kopeeri kood'; }, 2500);
+  });
+  overlayEl.addEventListener('keydown', function (event) {
+    if (event.key !== 'Tab') return;
+    var focusable = Array.prototype.filter.call(
+      overlayEl.querySelectorAll('button:not(:disabled), input:not(:disabled)'),
+      function (element) { return element.getClientRects().length > 0; }
+    );
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && net && !pollTimer) pollRoom(netEpoch);
+  });
+
+  buildBoard();
+  reset();
+  document.querySelector('main').inert = true;
+  document.getElementById('modeOnline').focus();
+})();
+</script>
+
+</body>
+</html>

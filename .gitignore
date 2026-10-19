@@ -1,0 +1,28 @@
+# Game-room databases and player credentials must never be published.
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.log
+data/
+
+# Python caches and virtual environments.
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Private environment configuration.
+.env
+.env.*
+!.env.example
+
+# Local/editor files.
+.DS_Store
+.idea/
+.vscode/
